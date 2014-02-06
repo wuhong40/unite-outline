@@ -1,5 +1,11 @@
 # unite-outline
 
+Note: I am Shougo(unite plugin author).  This plugin created by h1mesuke
+originally.  He is great VimL programmer.  But he has not maintained this
+plugin in several years.  And I cannot contact with him.  So I have maintained
+it instead.  To add features to this plugin is hard.  I cannot extend it.  Pull
+requests are well come.
+
 ## Introduction
 
 unite-outline is a [unite.vim](https://github.com/Shougo/unite.vim)'s source
