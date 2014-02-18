@@ -1,6 +1,7 @@
 "=============================================================================
 " File    : autoload/unite/source/outline/lib/ctags.vim
 " Author  : h1mesuke <himesuke@gmail.com>
+"           Shougo Matsushita <Shougo.Matsu at gmail.com>
 " Updated : 2012-01-11
 " Version : 0.5.1
 " License : MIT license {{{
@@ -37,7 +38,7 @@ endfunction
 
 let s:Tree  = unite#sources#outline#import('Tree')
 let s:Util  = unite#sources#outline#import('Util')
-let s:Vital = vital#of('unite')
+let s:Process = vital#of('unite').import('Process')
 
 function! s:get_SID()
   return matchstr(expand('<sfile>'), '<SNR>\d\+_')
@@ -104,7 +105,7 @@ call s:Ctags.function('supports')
 function! s:execute_ctags(context)
   " Write the current content of the buffer to a temporary file.
   let input = join(a:context.lines[1:], "\<NL>")
-  let input = s:Vital.iconv(input, &encoding, &termencoding)
+  let input = s:Process.iconv(input, &encoding, &termencoding)
   let temp_file = tempname()
   if writefile(split(input, "\<NL>"), temp_file) == -1
     call unite#util#print_message(
