@@ -10,7 +10,7 @@ let s:Util = unite#sources#outline#import('Util')
 let s:MaxLevel = 4
 
 let s:class = '\%(class\)'
-let s:function = '\%(\w\+.*->\)'
+let s:function = '\%(\w\+.*[-=]>\)'
 let s:export =  '\%(\%(module\.\)\?exports\)'
 
 let s:heading = '^\s\{,' . s:MaxLevel . '}\%(' . s:class . '\|' . s:function . '\|' . s:export .'\)'
