@@ -92,7 +92,7 @@ call s:Util.function('join_to')
 
 function! s:join_to_backward(context, lnum, pattern, limit)
   let lines = a:context.lines
-  let limit = max(1, a:lnum - a:limit])
+  let lnum = max([1, a:lnum - a:limit])
   while lnum > 0
     let line = lines[lnum]
     if line =~# a:pattern
