@@ -78,13 +78,14 @@ function! s:outline_info.create_heading(
     return {}
   endif
 
-  " handle parameter lists which are spread over multiple lines
+  " handle parameter lists which are spread over multiple lines;
+  " ignore parameter lists which are spread over more than 20 lines
   let paramstarts = a:context.heading_lnum
   let paramends = a:context.heading_lnum
-  while !(a:context.lines[paramends] =~ ')')
+  while !(a:context.lines[paramends] =~ ')') && paramends - paramstarts < 20
+      \&& paramends < len(a:context.lines) - 1
     let paramends += 1
   endwhile
-
   let paramline = join(
       \map(a:context.lines[paramstarts : paramends], 's:strip(v:val)'))
 
