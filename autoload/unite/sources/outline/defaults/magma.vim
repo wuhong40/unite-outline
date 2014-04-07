@@ -21,11 +21,11 @@ let s:Util = unite#sources#outline#import('Util')
 " Outline Info
 
 let s:outline_info = {
-    \ 'heading': '\%(\<function\>\|\<intrinsic\>\)',
+    \ 'heading': '\%(\<function\>\|\<intrinsic\>\|\<procedure\>\)',
     \ 'highlight_rules': [
     \   { 
     \     'name' : 'function',
-    \     'pattern' : '/function\|intrinsic/' 
+    \     'pattern' : '/function\|intrinsic\|procedure/' 
     \   },
     \   { 
     \     'name' : 'parameter_list',
@@ -36,37 +36,52 @@ let s:outline_info = {
     \ 'is_volatile': 1,
     \}
 
-function! s:outline_info.create_heading(which, heading_line, matched_line, context)
+" Identifiers (names for user variables, functions etc.) must begin with a
+" letter, and this letter may be followed by any combination of letters or
+" digits, provided that the name is not a reserved word (see the chapter on
+" reserved words a complete list). In this definition the underscore _ is
+" treated as a letter.
+let s:identifierRegex = '\h[0-9a-zA-Z_]*'
+let s:paramRegex = '[0-9a-zA-Z, :=_\[\]~{}<>@\*]*'
+
+
+function! s:outline_info.create_heading(
+    \which, heading_line, matched_line, context)
   let heading = {
       \ 'word' : a:heading_line,
       \ 'level' : 1,
-      \ 'type' : 'generic',
+      \ 'type' : 'function',
       \}
 
   if a:heading_line =~ '^\s*\<intrinsic\>'
-    let heading.word = 'intrinsic ' 
-    let heading.word .= matchstr(a:heading_line, 
-            \'^\s*intrinsic\s*\zs[0-9a-zA-Z]\+\ze(')
-    let heading.word .= ' (' . matchstr(a:heading_line, 
-            \'^\s*intrinsic\s*[0-9a-zA-Z]\+(\zs[0-9a-zA-Z, :=]*\ze)') . ')'
-    let heading.type = 'function'
+    " intrinsic <name> (<parameter_list>)
+    let type = 'intrinsic'
+    let func_name = matchstr(a:heading_line, 
+        \'^\s*intrinsic\s*\zs' . s:identifierRegex . '\ze\s*(')
   elseif a:heading_line =~ '^\s*\<function\>'
-    let heading.word = 'function ' 
-    let heading.word .= matchstr(a:heading_line, 
-            \'^\s*function\s*\zs[0-9a-zA-Z]\+\ze(')
-    let heading.word .= ' (' . matchstr(a:heading_line, 
-            \'^\s*function\s*[0-9a-zA-Z]\+(\zs[0-9a-zA-Z, :=]*\ze)') . ')'
-    let heading.type = 'function'
-  elseif a:heading_line =~ ':=\s*\<function\>'
-    let heading.word = 'function ' 
-    let heading.word .= matchstr(a:heading_line, 
-            \'^\s*\zs[0-9a-zA-Z]\+\ze\s*:=')
-    let heading.word .= ' (' . matchstr(a:heading_line, 
-            \'\<function\s*(\zs[0-9a-zA-Z, :=]*\ze)') . ')'
-    let heading.type = 'level_6'
+    " function <name> (<parameter_list>)
+    let type = 'function' 
+    let func_name = matchstr(a:heading_line, 
+        \'^\s*function\s*\zs' . s:identifierRegex . '\ze\s*(')
+  elseif a:heading_line =~ '^\s*\<procedure\>'
+    " procedure <name> (<parameter_list>)
+    let type = 'procedure' 
+    let func_name = matchstr(a:heading_line, 
+        \'^\s*procedure\s*\zs' . s:identifierRegex . '\ze\s*(')
+  elseif a:heading_line =~ ':=\s*\%\(\<function\>\|\<procedure\>\)'
+    " <name> := function(<parameter_list>)
+    " or
+    " <name> := procedure(<parameter_list>)
+    let type = matchstr(a:heading_line, '\%\(\<function\>\|\<procedure\>\)') 
+    let func_name = matchstr(a:heading_line, 
+        \'^\s*\zs' . s:identifierRegex . '\ze\s*:=')
   else
     return {}
   endif
+
+  let arg_list = matchstr(a:heading_line, '(\zs' . s:paramRegex . '\ze)') 
+
+  let heading.word = type . ' ' . func_name . '(' . arg_list . ')'
 
   return heading
 endfunction
