@@ -42,8 +42,11 @@ let s:outline_info = {
 " reserved words a complete list). In this definition the underscore _ is
 " treated as a letter.
 let s:identifierRegex = '\h[0-9a-zA-Z_]*'
-let s:paramRegex = '[0-9a-zA-Z, :=_\[\]~{}<>@\*]*'
+let s:paramRegex = '[0-9a-zA-Z, :=_\[\]~{}<>@\*^]*'
 
+function! s:strip(input_string)
+    return substitute(a:input_string, '^\s*\(.\{-}\)\s*$', '\1', '')
+endfunction
 
 function! s:outline_info.create_heading(
     \which, heading_line, matched_line, context)
@@ -79,7 +82,17 @@ function! s:outline_info.create_heading(
     return {}
   endif
 
-  let arg_list = matchstr(a:heading_line, '(\zs' . s:paramRegex . '\ze)') 
+  " handle parameter lists which are spread over multiple lines
+  let paramstarts = a:context.heading_lnum
+  let paramends = a:context.heading_lnum
+  while !(a:context.lines[paramends] =~ ')')
+    let paramends += 1
+  endwhile
+
+  let paramline = join(
+      \map(a:context.lines[paramstarts : paramends], 's:strip(v:val)'))
+
+  let arg_list = matchstr(paramline, '(\zs' . s:paramRegex . '\ze)') 
 
   let heading.word = type . ' ' . func_name . '(' . arg_list . ')'
 
