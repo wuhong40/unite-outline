@@ -107,7 +107,8 @@ function! s:execute_ctags(context)
   let input = join(a:context.lines[1:], "\<NL>")
   let input = s:Process.iconv(input, &encoding, &termencoding)
   let temp_file = tempname()
-  if writefile(split(input, "\<NL>"), temp_file) == -1
+  if unite#util#is_sudo() ||
+        \ writefile(split(input, "\<NL>"), temp_file) == -1
     call unite#util#print_message(
           \ "[unite-outline] Couldn't make a temporary file at " . temp_file)
     return []
