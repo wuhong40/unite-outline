@@ -74,8 +74,11 @@ function! s:find_exuberant_ctags()
       endif
     endif
   endfor
+
+  call unite#print_error("unite-outline: ctags is not found.")
+
   return ''
-endfunction 
+endfunction
 
 let s:Ctags.exe = s:find_exuberant_ctags()
 let s:Ctags.lang_info = {}
