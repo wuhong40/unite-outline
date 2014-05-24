@@ -69,7 +69,7 @@ function! s:find_exuberant_ctags()
     if executable(ctags)
       " Make sure it is Exuberant.
       let ctags_out = unite#util#system(ctags . ' --version')
-      if split(ctags_out, "\<NL>")[0] =~? '\<Exuberant Ctags\>'
+      if ctags_out =~? '\<Exuberant Ctags\>'
         return ctags
       endif
     endif
