@@ -9,7 +9,7 @@
 "=============================================================================
 
 " Default outline info for TeX
-" Version: 0.1.0
+" Version: 0.1.1
 
 function! unite#sources#outline#defaults#tex#outline_info()
   return s:outline_info
@@ -21,7 +21,7 @@ let s:Util = unite#sources#outline#import('Util')
 " Outline Info
 
 let s:outline_info = {
-      \ 'heading': '^\s*\\\%(title\|part\|chapter\|\%(sub\)\{,2}section\|begin{thebibliography}\){',
+      \ 'heading': '^\s*\\\%(title\|part\|chapter\|\%(sub\)\{,2}section\|bibliography\|begin{thebibliography}\){',
       \}
 
 let s:unit_level_map = {
@@ -46,7 +46,7 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
         \ }
 
   let h_lnum = a:context.heading_lnum
-  if a:heading_line =~ '^\s*\\begin{thebibliography}{'
+  if a:heading_line =~ '^\s*\\\%(begin{thebibliography}\|bibliography\){'
     " Bibliography
     let heading.level = s:bib_level
     let bib_label = s:Util.neighbor_matchstr(a:context, h_lnum,
