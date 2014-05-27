@@ -21,7 +21,7 @@ let s:Util = unite#sources#outline#import('Util')
 " Outline Info
 
 let s:outline_info = {
-      \ 'heading': '^\s*\\\%(title\|part\|chapter\|\%(sub\)\{,2}section\|bibliography\|begin{thebibliography}\){',
+      \ 'heading': '^\s*\\\%(title\|part\|chapter\|\%(sub\)\{,2}section\|label\|bibliography\|begin{thebibliography}\){',
       \}
 
 let s:unit_level_map = {
@@ -31,11 +31,12 @@ let s:unit_level_map = {
       \ 'section'      : 4,
       \ 'subsection'   : 5,
       \ 'subsubsection': 6,
+      \ 'label'        : 7,
       \ }
 
 function! s:outline_info.before(context)
   let s:unit_count = map(copy(s:unit_level_map), '0')
-  let s:bib_level = 6
+  let s:bib_level = 7
 endfunction
 
 function! s:outline_info.create_heading(which, heading_line, matched_line, context)
@@ -86,6 +87,9 @@ function! s:normalize_heading_word(word, unit)
   let word = substitute(a:word, '\\\\\n', '', 'g')
   let word = matchstr(word, '^\s*\\\w\+{\zs.*\ze}\s*\%(%.*\)\?$')
   let word = s:unit_seqnr_prefix(a:unit) . word
+  if a:unit ==# 'label'
+    let word .= ' (label)'
+  endif
   return word
 endfunction
 
