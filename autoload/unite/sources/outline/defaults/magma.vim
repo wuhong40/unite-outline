@@ -1,7 +1,7 @@
 "=============================================================================
 " File    : autoload/unite/sources/outline/defaults/magma.vim
-" Author  : Sebastian Jambor <s.jambor@auckland.ac.nz>
-" Updated : 2014-04-07
+" Author  : Sebastian Jambor <seb.jambor@gmail.com>
+" Updated : 2015-05-27
 "
 " Licensed under the MIT license:
 " http://www.opensource.org/licenses/mit-license.php
@@ -20,6 +20,7 @@ let s:Util = unite#sources#outline#import('Util')
 "-----------------------------------------------------------------------------
 " Outline Info
 
+" From the Magma handbook (http://magma.maths.usyd.edu.au/magma/handbook/):
 " Identifiers (names for user variables, functions etc.) must begin with a
 " letter, and this letter may be followed by any combination of letters or
 " digits, provided that the name is not a reserved word (see the chapter on
@@ -30,15 +31,15 @@ let s:identifierRegex = '\h[0-9a-zA-Z_]*'
 let s:outline_info = {
     \ 'heading': '\%(\<function\>\|\<procedure\>\|\<intrinsic\>\)',
     \ 'highlight_rules': [
-    \   { 
+    \   {
     \     'name' : 'type',
-    \     'pattern' : '/\<function\>\|\<procedure\>\|\<intrinsic\>/' 
+    \     'pattern' : '/\<function\>\|\<procedure\>\|\<intrinsic\>/'
     \   },
-    \   { 
+    \   {
     \     'name' : 'function',
-    \     'pattern' : '/ ' . s:identifierRegex . '\ze (/' 
+    \     'pattern' : '/ ' . s:identifierRegex . '\ze (/'
     \   },
-    \   { 
+    \   {
     \     'name' : 'parameter_list',
     \     'pattern' : '/(.*)/',
     \   },
@@ -63,16 +64,16 @@ function! s:outline_info.create_heading(
     " procedure <name> (<parameter_list>)
     " or
     " intrinsic <name> (<parameter_list>)
-    let type = matchstr(a:heading_line, 
-        \'\%\(\<function\>\|\<procedure\>\|\<intrinsic\>\)') 
-    let func_name = matchstr(a:heading_line, 
+    let type = matchstr(a:heading_line,
+        \'\%\(\<function\>\|\<procedure\>\|\<intrinsic\>\)')
+    let func_name = matchstr(a:heading_line,
         \'^\s*' . type . '\s*\zs' . s:identifierRegex . '\ze\s*(')
   elseif a:heading_line =~ ':=\s*\%\(\<function\>\|\<procedure\>\)'
     " <name> := function(<parameter_list>)
     " or
     " <name> := procedure(<parameter_list>)
-    let type = matchstr(a:heading_line, '\%\(\<function\>\|\<procedure\>\)') 
-    let func_name = matchstr(a:heading_line, 
+    let type = matchstr(a:heading_line, '\%\(\<function\>\|\<procedure\>\)')
+    let func_name = matchstr(a:heading_line,
         \'^\s*\zs' . s:identifierRegex . '\ze\s*:=')
   else
     return {}
@@ -89,7 +90,7 @@ function! s:outline_info.create_heading(
   let paramline = join(
       \map(a:context.lines[paramstarts : paramends], 's:strip(v:val)'))
 
-  let arg_list = matchstr(paramline, '(\zs.*\ze)') 
+  let arg_list = matchstr(paramline, '(\zs.*\ze)')
 
   let heading.word = type . ' ' . func_name . ' (' . arg_list . ')'
 
