@@ -56,6 +56,17 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
     " Parts, Chapters, Sections, etc
     let unit = matchstr(a:heading_line, '^\s*\\\zs\w\+\ze{')
     let s:unit_count[unit] += 1
+    if unit ==# 'chapter'
+      let s:unit_count['section'] = 0
+      let s:unit_count['subsection'] = 0
+      let s:unit_count['subsubsection'] = 0
+    elseif unit ==# 'section'
+      let s:unit_count['subsection'] = 0
+      let s:unit_count['subsubsection'] = 0
+    elseif unit ==# 'subsection'
+      let s:unit_count['subsubsection'] = 0
+    endif
+
     let heading.level = s:unit_level_map[unit]
     if 1 < heading.level && heading.level < s:bib_level
       let s:bib_level = heading.level
@@ -79,9 +90,9 @@ function! s:normalize_heading_word(word, unit)
 endfunction
 
 function! s:unit_seqnr_prefix(unit)
-  if a:unit ==# 'title'
-    let seqnr = []
-  elseif a:unit ==# 'part'
+  let seqnr = []
+
+  if a:unit ==# 'part'
     let seqnr = [s:Util.String.nr2roman(s:unit_count.part)]
   elseif a:unit ==# 'chapter'
     let seqnr = [s:unit_count.chapter]
@@ -90,7 +101,6 @@ function! s:unit_seqnr_prefix(unit)
       let seqnr = [s:unit_count.chapter, s:unit_count.section]
     elseif a:unit ==# 'section'
       let seqnr = [s:unit_count.section]
-    else
     endif
   elseif a:unit ==# 'subsection'
     if s:unit_count.chapter > 0
@@ -101,8 +111,6 @@ function! s:unit_seqnr_prefix(unit)
   elseif a:unit ==# 'subsubsection'
     if s:unit_count.chapter > 0
       let seqnr = [s:unit_count.section, s:unit_count.subsection, s:unit_count.subsubsection]
-    else
-      let seqnr = []
     endif
   endif
   let prefix = join(seqnr, '.')
