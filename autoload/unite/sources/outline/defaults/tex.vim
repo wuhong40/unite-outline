@@ -22,6 +22,21 @@ let s:Util = unite#sources#outline#import('Util')
 
 let s:outline_info = {
       \ 'heading': '^\s*\\\%(title\|part\|chapter\|\%(sub\)\{,2}section\|label\|bibliography\|begin{thebibliography}\){',
+      \ 'highlight_rules': [
+      \   { 
+      \     'name' : 'type',
+      \     'pattern' : '/[0-9\.]\+/' 
+      \   },
+      \   { 
+      \     'name' : 'special',
+      \     'pattern' : '/.*\ze (label)/' 
+      \   },
+      \   { 
+      \     'name' : 'comment',
+      \     'pattern' : '/(label)/' 
+      \   },
+      \ ],
+      \ 'is_volatile': 1,
       \}
 
 let s:unit_level_map = {
