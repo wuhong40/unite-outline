@@ -25,7 +25,7 @@ let s:outline_info = {
       \ 'heading_groups': {
       \   'namespace': ['namespace'],
       \   'type'     : ['class', 'enum', 'struct', 'typedef'],
-      \   'function' : ['function', 'macro'],
+      \   'function' : ['function', 'prototype', 'macro', 'member'],
       \ },
       \
       \ 'not_match_patterns': [

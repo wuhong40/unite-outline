@@ -376,7 +376,7 @@ endfunction
 "
 let s:Ctags.lang_info.cpp = {
       \ 'name': 'C++',
-      \ 'ctags_options': ' --c++-kinds=cdfgnstu ',
+      \ 'ctags_options': ' --c++-kinds=cdfgnstuempv ',
       \ 'scope_kinds'  : ['namespace', 'class', 'struct'],
       \ 'scope_delim'  : '::',
       \ }
