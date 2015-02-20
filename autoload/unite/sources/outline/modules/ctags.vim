@@ -125,17 +125,20 @@ function! s:execute_ctags(context)
   " Assemble the command-line.
   let lang_info = s:Ctags.lang_info[filetype]
   let opts  = ' -f - --excmd=number --fields=afiKmsSzt --sort=no --append=no'
-  let opts .= " --language-force='" . lang_info.name . "' "
+  let opts .= " --language-force=\"" . lang_info.name . "\" "
   let opts .= lang_info.ctags_options
 
   let path = s:Util.Path.normalize(temp_file)
   let path = s:Util.String.shellescape(path)
 
   let cmdline = s:Ctags.exe . opts . path
+  echom cmdline
 
   " Execute the Ctags.
   let ctags_out = unite#util#system(cmdline)
+  echom ctags_out
   let status = unite#util#get_last_status()
+  echom status
   if status != 0
     call unite#print_message(
           \ "[unite-outline] ctags failed with status " . status . ".")
