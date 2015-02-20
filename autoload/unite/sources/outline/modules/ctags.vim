@@ -132,13 +132,10 @@ function! s:execute_ctags(context)
   let path = s:Util.String.shellescape(path)
 
   let cmdline = s:Ctags.exe . opts . path
-  echom cmdline
 
   " Execute the Ctags.
   let ctags_out = unite#util#system(cmdline)
-  echom ctags_out
   let status = unite#util#get_last_status()
-  echom status
   if status != 0
     call unite#print_message(
           \ "[unite-outline] ctags failed with status " . status . ".")
