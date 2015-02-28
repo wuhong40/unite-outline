@@ -125,7 +125,7 @@ function! s:execute_ctags(context)
   " Assemble the command-line.
   let lang_info = s:Ctags.lang_info[filetype]
   let opts  = ' -f - --excmd=number --fields=afiKmsSzt --sort=no --append=no'
-  let opts .= " --language-force='" . lang_info.name . "' "
+  let opts .= " --language-force=\"" . lang_info.name . "\" "
   let opts .= lang_info.ctags_options
 
   let path = s:Util.Path.normalize(temp_file)
