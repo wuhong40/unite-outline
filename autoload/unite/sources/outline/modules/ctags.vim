@@ -449,6 +449,12 @@ let s:Ctags.lang_info.cs = {
       \ 'scope_delim'  : '.',
       \ }
 
+let s:Ctags.lang_info.typescript = {
+      \ 'name': 'typescript',
+      \ 'ctags_options': '',
+      \ 'scope_kinds'  : ['modules', 'classes', 'interfaces', 'enums', 'functions', 'varlambdas'],
+      \ }
+
 "-----------------------------------------------------------------------------
 " Java
 "
