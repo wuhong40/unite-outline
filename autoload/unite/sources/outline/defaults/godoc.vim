@@ -17,7 +17,7 @@ endfunction
 let s:Util = unite#sources#outline#import('Util')
 
 let s:outline_info = {
-            \ 'heading' : '^\%(\u[[:upper:] ]*\|\%(package\|func\|type\|var\)\s\+.\+\|)\|\s\+\h\w*\s\+=\s\+.*\)$',
+            \ 'heading' : '^\%(\u[[:upper:] ]*\|\%(package\|func\|type\|var\|const\)\s\+.\+\|)\|\s\+\h\w*\s\+=\s\+.*\)$',
             \ 'end' : '^\s*)\s*$',
             \ 'highlight_rules' : [
             \   {
@@ -35,12 +35,12 @@ let s:outline_info = {
             \   },
             \   {
             \       'name' : 'variable',
-            \       'pattern' : '/\<\h\w*\ze : variable/',
+            \       'pattern' : '/\<\h\w*\ze : \%(variable\|constant\)/',
             \       'highlight' : 'Identifier',
             \   },
             \   {
             \       'name' : 'keyword',
-            \       'pattern' : '/\<\%(function\|type\|struct\|interface\|variable\|package\)\>/',
+            \       'pattern' : '/\<\%(function\|type\|struct\|interface\|variable\|package\|constant\)\>/',
             \       'highlight' : 'Keyword',
             \   },
             \   {
@@ -92,6 +92,13 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
         endif
         let type = 'variable'
         let word = matchstr(a:heading_line, '^var\s\+\zs\h\w*') . ' : variable'
+    elseif a:heading_line =~# '^const\>'
+        if a:heading_line =~# '($'
+            let s:parsing_block = 'constant'
+            return {}
+        endif
+        let type = 'constant'
+        let word = matchstr(a:heading_line, '^const\s\+\zs\h\w*') . ' : constant'
     elseif a:heading_line =~# '^package\>'
         let type = 'package'
         let word = matchstr(a:heading_line, '^package\s\+\zs\h\w*') . ' : package'
