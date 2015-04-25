@@ -17,7 +17,8 @@ endfunction
 let s:Util = unite#sources#outline#import('Util')
 
 let s:outline_info = {
-            \ 'heading' : '^\%(\u[[:upper:] ]*\|\%(package\|func\|type\|var\)\s\+.\+\)$',
+            \ 'heading' : '^\%(\u[[:upper:] ]*\|\%(package\|func\|type\|var\)\s\+.\+\|)\|\s\+\h\w*\s\+=\s\+.*\)$',
+            \ 'end' : '^\s*)\s*$',
             \ 'highlight_rules' : [
             \   {
             \       'name' : 'title',
@@ -50,13 +51,26 @@ let s:outline_info = {
             \ ],
             \ }
 
+let s:parsing_block = ''
+
 function! s:outline_info.create_heading(which, heading_line, matched_line, context)
-    if a:which != 'heading'
+    if a:which !=# 'heading'
         return {}
     endif
 
     if a:heading_line =~# '^\u[[:upper:] ]*$'
         return {'word' : a:heading_line, 'type' : 'title', 'level' : 1}
+    endif
+
+    if s:parsing_block !=# '' && a:heading_line =~# '^\s\+\h\w* ='
+        let type = s:parsing_block
+        let word = matchstr(a:heading_line, '^\s\+\(\h\w*\)') . ' : ' . type
+        return {'type' : type, 'word' : word, 'level' : 2}
+    endif
+
+    if a:heading_line ==# ')'
+        let s:parsing_block = ''
+        return {}
     endif
 
     if a:heading_line =~# '^type\>'
@@ -72,6 +86,10 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
         let type = 'function'
         let word = matchstr(a:heading_line, '^func\s\+\zs\%(([^)]*)\s\+\)\=\h\w*\s*([^)]*)') . ' : function'
     elseif a:heading_line =~# '^var\>'
+        if a:heading_line =~# '($'
+            let s:parsing_block = 'variable'
+            return {}
+        endif
         let type = 'variable'
         let word = matchstr(a:heading_line, '^var\s\+\zs\h\w*') . ' : variable'
     elseif a:heading_line =~# '^package\>'
