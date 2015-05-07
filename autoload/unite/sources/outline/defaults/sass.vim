@@ -1,6 +1,6 @@
 "=============================================================================
 " File    : autoload/unite/sources/outline/defaults/sass.vim
-" Author  : roylez <roylzuo@gmail.com
+" Author  : roylez <roylzuo@gmail.com>
 " Updated : 2015-05-07
 "
 " Licensed under the MIT license:
