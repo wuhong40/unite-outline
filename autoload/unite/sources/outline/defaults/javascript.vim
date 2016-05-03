@@ -146,8 +146,12 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
       else
         let heading.level = 2
         let matched_list = matchlist(a:heading_line, s:pat_es6_method)
-        let [func_name, arg_list] = matched_list[1:2]
-        let heading.word = func_name . '(' . arg_list . ')'
+        if empty(matched_list)
+          let heading.level = 0
+        else
+          let [func_name, arg_list] = matched_list[1:2]
+          let heading.word = func_name . '(' . arg_list . ')'
+        endif
       endif
     endif
   endif
