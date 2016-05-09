@@ -146,12 +146,13 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
       else
         let heading.level = 2
         let matched_list = matchlist(a:heading_line, s:pat_es6_method)
-        " Not match key words
-        if empty(matched_list) || match(a:heading_line, '^\s*\(for\|if\|while\|switch\)') != -1
-          let heading.level = 0
-        else
-          let [func_name, arg_list] = matched_list[1:2]
-          let heading.word = func_name . '(' . arg_list . ')'
+        if len(matched_list) > 0
+          if match(a:heading_line, '^\s*\%(for\|if\|while\|switch\)\>') != -1
+            let heading.level = 0
+          else
+            let [func_name, arg_list] = matched_list[1:2]
+            let heading.word = func_name . '(' . arg_list . ')'
+          endif
         endif
       endif
     endif
