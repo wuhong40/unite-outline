@@ -67,14 +67,19 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
   return heading
 endfunction
 
+function! s:count_occurences(char, string) abort
+  " Count number of occurences of {char} in {string}.
+  return len(split(a:string, a:char, 1)) - 1
+endfunction
+
 function! s:has_balanced_chars(line, open, close) abort
   " Check whether {line} has balanced {open} and {close} characters.
   " Actually just fake it by checking if they appear same number of times
-  let n_open_chars = len(split(a:line, a:open, 1)) - 1
+  let n_open_chars = s:count_occurences(a:open, a:line)
   if a:open == a:close
     return (n_open_chars % 2) == 0
   endif
-  let n_close_chars = len(split(a:line, a:close, 1)) - 1
+  let n_close_chars = s:count_occurences(a:close, a:line)
   return n_open_chars == n_close_chars
 endfunction
 
