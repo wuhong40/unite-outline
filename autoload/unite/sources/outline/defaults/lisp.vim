@@ -58,11 +58,11 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
         \ }
   let form_args = matchstr(heading.word, '^\S\+\s\+\zs.*')
 
-  " If we are checking a def* or a top-level form, fix the heading by
-  " appending the proper type after `::'.
+  " Whether we are checking a def* or a top-level form, fix the heading by
+  " appending appropriate type information after `::'.
   if heading.type =~ '^\(\S\+::\?\)\?def.*'
     let heading.word = s:add_ldots(form_args) . ' :: ' . heading.type
-  elseif first_form =~ '^\s*('
+  else
     let heading.word = s:add_ldots(heading.word) . ' :: top-level form'
   endif
   return heading
