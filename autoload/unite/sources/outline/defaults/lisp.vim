@@ -18,7 +18,7 @@ let s:Util = unite#sources#outline#import('Util')
 " Outline Info
 
 let s:outline_info = {
-      \ 'heading'  : '^(\|^\s*(\(\S*:\)\?def\S*', 
+      \ 'heading'  : '^\s*#\(+\|-\)\(([^)]\+)\|\S[^(]*\)\s*(\|^(\|^\s*(\(\S*:\)\?def\S*',
       \
       \ 'skip': {
       \   'header': '^;',
@@ -50,10 +50,11 @@ let s:outline_info = {
 
 function! s:outline_info.create_heading(which, heading_line, matched_line, context) abort
   let h_lnum = a:context.heading_lnum
+  let first_form = s:remove_feature_check(a:heading_line)
   let heading = {
-        \ 'word' : s:splice_form(a:heading_line),
+        \ 'word' : s:splice_form(first_form),
         \ 'level': s:Util.get_indent_level(a:context, h_lnum),
-        \ 'type' : matchstr(a:heading_line, '^\s*(\zs\S\+\ze'),
+        \ 'type' : matchstr(first_form, '^\s*(\zs\S\+\ze'),
         \ }
   let form_args = matchstr(heading.word, '^\S\+\s\+\zs.*')
 
@@ -61,7 +62,7 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
   " appending the proper type after `::'.
   if heading.type =~ '^\(\S\+::\?\)\?def.*'
     let heading.word = s:add_ldots(form_args) . ' :: ' . heading.type
-  elseif a:heading_line =~ '^('
+  elseif first_form =~ '^\s*('
     let heading.word = s:add_ldots(heading.word) . ' :: top-level form'
   endif
   return heading
@@ -90,6 +91,11 @@ function! s:splice_form(line) abort
   else
     return matchstr(a:line, '^\s*(\zs.*')
   endif
+endfunction
+
+function! s:remove_feature_check(line) abort
+  " Remove the (#+|#-)[feature] expression from {line} if it exists.
+  return matchstr(a:line, '^\(\s*#\(+\|-\)\(([^)]\+)\|\S[^(]\+\)\)\?\zs.*')
 endfunction
 
 function! s:add_ldots(line) abort
