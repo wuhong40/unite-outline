@@ -22,6 +22,7 @@ let s:outline_info = {
       \
       \ 'skip': {
       \   'header': '^;',
+      \   'block': ['^\s*"', '[^\\]"'],
       \ },
       \
       \ 'not_match_patterns': [
@@ -46,8 +47,6 @@ let s:outline_info = {
       \     'pattern'  : '/.* :: top-level form/' },
       \ ],
       \}
-
-" TODO: #+ forms, ignore forms from docstrings.
 
 function! s:outline_info.create_heading(which, heading_line, matched_line, context) abort
   let h_lnum = a:context.heading_lnum
