@@ -21,7 +21,7 @@ let s:DEF_PATTERN = '\(\S*:\)\?def\S*'
 let s:FEATURE_PATTERN = '#\(+\|-\)\(([^)]\+)\|\S[^(]*\)'
 
 let s:outline_info = {
-      \ 'heading'  : '^\s*' . s:FEATURE_PATTERN . '\s*(\|^(\|^\s*(' . s:DEF_PATTERN,
+      \ 'heading'  : '^' . s:FEATURE_PATTERN . '\s*(\|^(\|^\s*(' . s:DEF_PATTERN,
       \
       \ 'skip': {
       \   'header': '^;',
@@ -97,7 +97,7 @@ endfunction
 
 function! s:remove_feature_check(line) abort
   " Remove the (#+|#-)[feature] expression from {line} if it exists.
-  return matchstr(a:line, '^\(\s*' . s:FEATURE_PATTERN . '\)\?\zs.*')
+  return matchstr(a:line, '^\(' . s:FEATURE_PATTERN . '\)\?\zs.*')
 endfunction
 
 function! s:add_ldots(line) abort
