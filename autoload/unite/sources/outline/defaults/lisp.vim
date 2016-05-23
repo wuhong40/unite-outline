@@ -17,8 +17,11 @@ let s:Util = unite#sources#outline#import('Util')
 "-----------------------------------------------------------------------------
 " Outline Info
 
+let s:DEF_PATTERN = '\(\S*:\)\?def\S*'
+let s:FEATURE_PATTERN = '#\(+\|-\)\(([^)]\+)\|\S[^(]*\)'
+
 let s:outline_info = {
-      \ 'heading'  : '^\s*#\(+\|-\)\(([^)]\+)\|\S[^(]*\)\s*(\|^(\|^\s*(\(\S*:\)\?def\S*',
+      \ 'heading'  : '^\s*' . s:FEATURE_PATTERN . '\s*(\|^(\|^\s*(' . s:DEF_PATTERN,
       \
       \ 'skip': {
       \   'header': '^;',
@@ -40,30 +43,29 @@ let s:outline_info = {
       \
       \ 'highlight_rules': [
       \   { 'name'     : 'type',
-      \     'pattern'  : '/ :: \zs.*\ze/' },
+      \     'pattern'  : '/' . s:DEF_PATTERN . '/' },
       \   { 'name'     : 'function',
-      \     'pattern'  : '/ \zs.*\ze :: /' },
+      \     'pattern'  : '/ [^ ]* \zs.*/' },
       \   { 'name'     : 'special',
-      \     'pattern'  : '/.* :: top-level form/' },
+      \     'pattern'  : '/.*:: toplevel form/' },
       \ ],
       \}
 
 function! s:outline_info.create_heading(which, heading_line, matched_line, context) abort
-  let h_lnum = a:context.heading_lnum
   let first_form = s:remove_feature_check(a:heading_line)
   let heading = {
         \ 'word' : s:splice_form(first_form),
-        \ 'level': s:Util.get_indent_level(a:context, h_lnum),
+        \ 'level': s:Util.get_indent_level(a:context, a:context.heading_lnum),
         \ 'type' : matchstr(first_form, '^\s*(\zs\S\+\ze'),
         \ }
   let form_args = matchstr(heading.word, '^\S\+\s\+\zs.*')
 
   " Whether we are checking a def* or a top-level form, fix the heading by
   " appending appropriate type information after `::'.
-  if heading.type =~ '^\(\S\+::\?\)\?def.*'
-    let heading.word = s:add_ldots(form_args) . ' :: ' . heading.type
+  if heading.type =~ '^' . s:DEF_PATTERN
+    let heading.word = heading.type . ' ' . s:add_ldots(form_args)
   else
-    let heading.word = s:add_ldots(heading.word) . ' :: top-level form'
+    let heading.word = s:add_ldots(heading.word) . ' :: toplevel form'
   endif
   return heading
 endfunction
@@ -95,7 +97,7 @@ endfunction
 
 function! s:remove_feature_check(line) abort
   " Remove the (#+|#-)[feature] expression from {line} if it exists.
-  return matchstr(a:line, '^\(\s*#\(+\|-\)\(([^)]\+)\|\S[^(]\+\)\)\?\zs.*')
+  return matchstr(a:line, '^\(\s*' . s:FEATURE_PATTERN . '\)\?\zs.*')
 endfunction
 
 function! s:add_ldots(line) abort
