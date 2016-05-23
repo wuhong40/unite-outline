@@ -42,10 +42,10 @@ let s:outline_info = {
       \ },
       \
       \ 'highlight_rules': [
-      \   { 'name'     : 'type',
-      \     'pattern'  : '/' . s:DEF_PATTERN . '/' },
       \   { 'name'     : 'function',
       \     'pattern'  : '/ [^ ]* \zs.*/' },
+      \   { 'name'     : 'type',
+      \     'pattern'  : '/' . s:DEF_PATTERN . '/' },
       \   { 'name'     : 'special',
       \     'pattern'  : '/.*:: toplevel form/' },
       \ ],
