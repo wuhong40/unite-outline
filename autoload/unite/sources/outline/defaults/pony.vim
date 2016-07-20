@@ -56,29 +56,29 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
                 \ 'type' : 'generic',
                 \ }
 
-  if a:which == 'heading'
+  if a:which ==# 'heading'
     let heading.word = substitute(heading.word, '\s*{.*$', '', '')
 
     let heading_type = ''
-    if heading.word =~ '^\s*interface\>'
+    if heading.word =~# '^\s*interface\>'
       let heading_type = 'interface'
-    elseif heading.word =~ '^\s*class\>'
+    elseif heading.word =~# '^\s*class\>'
       let heading_type = 'class'
-    elseif heading.word =~ '^\s*trait\>'
+    elseif heading.word =~# '^\s*trait\>'
       let heading_type = 'trait'
-    elseif heading.word =~ '^\s*actor\>'
+    elseif heading.word =~# '^\s*actor\>'
       let heading_type = 'actor'
-    elseif heading.word =~ '^\s*type\>'
+    elseif heading.word =~# '^\s*type\>'
       let heading_type = 'type'
-    elseif heading.word =~ '^\s*primitive\>'
+    elseif heading.word =~# '^\s*primitive\>'
       let heading_type = 'primitive'
     endif
-    if heading_type != ''
+    if heading_type !=# ''
        let heading.type = 'type'
        let heading.level = 1
     endif
 
-    if heading.type != 'generic'
+    if heading.type !=# 'generic'
       let name = matchstr(heading.word, '\zs\<' . heading_type . '\s\+' . s:pat_typename)
       if len(name) > 0
          let heading.word = name . ' : ' . heading_type
@@ -88,7 +88,7 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
       end
     end
 
-    if heading.word =~ '^\s*\%(fun\|be\|new\)\>'
+    if heading.word =~# '^\s*\%(fun\|be\|new\)\>'
       " Function / Behaviour / Constructor
       let heading.type = 'function'
       let heading.level = 2
@@ -130,7 +130,7 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
     endif
 
     " For anything but a function, we need to put the visibility
-    if heading.type != 'function' && heading.type != 'generic'
+    if heading.type !=# 'function' && heading.type !=# 'generic'
       let prefix = '+ '
       if len(matchstr(heading.word, '^\s*[_]')) > 0
         let prefix = '- '
@@ -138,7 +138,7 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
       let heading.word = prefix . heading.word
     endif
 
-    if len(substitute(heading.word, '\%(^\s\+\|\s\+$\)', '', 'g')) == 0 || heading.type == 'generic'
+    if len(substitute(heading.word, '\%(^\s\+\|\s\+$\)', '', 'g')) == 0 || heading.type ==# 'generic'
       let heading = {}
     endif
   endif
@@ -147,18 +147,10 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
 endfunction
 
 function! s:outline_info.need_blank_between(cand1, cand2, memo) abort
-  if a:cand1.source__heading_group == 'function' && a:cand2.source__heading_group == 'function'
+  if a:cand1.source__heading_type ==# 'function' && a:cand2.source__heading_type ==# 'function'
     " Don't insert a blank between two sibling functions.
     return 0
   else
-    if (a:cand1.source__heading_group == 'function' && a:cand2.source__heading_group == 'type')
-      return 1
-    endif
-
-    if (a:cand1.source__heading_group == 'type' && a:cand2.source__heading_group == 'type')
-      return (!a:cand1.source__has_marked_child && a:cand2.source__has_marked_child)
-    endif
-
-    return 0
+    return a:cand1.source__has_marked_child || a:cand2.source__has_marked_child
   endif
 endfunction
