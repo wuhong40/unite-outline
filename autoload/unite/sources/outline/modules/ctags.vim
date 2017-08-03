@@ -144,7 +144,7 @@ function! s:execute_ctags(context) abort
 
   " Execute the Ctags.
   let ctags_out = unite#util#system(cmdline)
-  echomsg cmdline
+  " echomsg cmdline
   let status = unite#util#get_last_status()
   if status != 0
     call unite#print_message(
