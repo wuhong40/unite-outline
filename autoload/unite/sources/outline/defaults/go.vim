@@ -10,10 +10,11 @@
 
 " Default outline info for Go
 
-function! unite#sources#outline#defaults#go#outline_info()
+function! unite#sources#outline#defaults#go#outline_info() abort
     return s:outline_info
 endfunction
 
+let s:Ctags = unite#sources#outline#import('Ctags')
 let s:Util = unite#sources#outline#import('Util')
 
 let s:outline_info = {
@@ -48,7 +49,11 @@ let s:outline_info = {
             \ ],
             \ }
 
-function! s:outline_info.create_heading(which, heading_line, matched_line, context)
+function! s:outline_info.extract_headings(context) abort
+  return s:Ctags.extract_headings(a:context)
+endfunction
+
+function! s:outline_info.create_heading(which, heading_line, matched_line, context) abort
     let type = 'generic'
     let level = 0
 

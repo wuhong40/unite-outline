@@ -30,7 +30,7 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
-function! unite#sources#outline#modules#ctags#import()
+function! unite#sources#outline#modules#ctags#import() abort
   return s:Ctags
 endfunction
 
@@ -38,9 +38,9 @@ endfunction
 
 let s:Tree  = unite#sources#outline#import('Tree')
 let s:Util  = unite#sources#outline#import('Util')
-let s:Process = vital#of('unite').import('Process')
+let s:Process = unite#util#get_vital().import('Process')
 
-function! s:get_SID()
+function! s:get_SID() abort
   return matchstr(expand('<sfile>'), '<SNR>\d\+_')
 endfunction
 let s:SID = s:get_SID()
@@ -55,21 +55,25 @@ let s:Ctags = unite#sources#outline#modules#base#new('Ctags', s:SID)
 " Find the Exuberant Ctags and identify its binary name. If not found, returns
 " empty String.
 "
-function! s:find_exuberant_ctags()
+function! s:find_exuberant_ctags() abort
   let ctags_exe_names = [
         \ 'ctags-exuberant',
         \ 'exctags',
         \ 'ctags',
         \ 'tags',
         \ ]
-  if exists('g:unite_source_outline_ctags_program') && !empty(g:unite_source_outline_ctags_program)
-    let ctags_exe_names = [g:unite_source_outline_ctags_program] + ctags_exe_names
+  if exists('g:unite_source_outline_ctags_program')
+        \ && g:unite_source_outline_ctags_program != ''
+    let ctags_exe_names =
+          \ [unite#util#substitute_path_separator(
+          \   g:unite_source_outline_ctags_program)]
+          \ + ctags_exe_names
   endif
   for ctags in ctags_exe_names
     if executable(ctags)
-      " Make sure it is Exuberant.
+      " Make sure it is Exuberant or Universal ctags.
       let ctags_out = unite#util#system(ctags . ' --version')
-      if ctags_out =~? '\<Exuberant Ctags\>'
+      if ctags_out =~? '\<\%(Exuberant\|Universal\) Ctags\>'
         return ctags
       endif
     endif
@@ -85,14 +89,14 @@ let s:Ctags.lang_info = {}
 
 " Returns True if the Exuberant Ctags is available.
 "
-function! s:Ctags_exists()
+function! s:Ctags_exists() abort
   return !empty(s:Ctags.exe)
 endfunction
 call s:Ctags.function('exists')
 
 " Returns True if the Exuberant Ctags supports {filetype}.
 "
-function! s:Ctags_supports(filetype)
+function! s:Ctags_supports(filetype) abort
   if !has_key(s:Ctags.lang_info, a:filetype)
     return 0
   else
@@ -105,7 +109,7 @@ call s:Ctags.function('supports')
 
 " Executes the Ctags and returns a List of tag objects.
 "
-function! s:execute_ctags(context)
+function! s:execute_ctags(context) abort
   " Write the current content of the buffer to a temporary file.
   let input = join(a:context.lines[1:], "\<NL>")
   let input = s:Process.iconv(input, &encoding, &termencoding)
@@ -125,16 +129,22 @@ function! s:execute_ctags(context)
   " Assemble the command-line.
   let lang_info = s:Ctags.lang_info[filetype]
   let opts  = ' -f - --excmd=number --fields=afiKmsSzt --sort=no --append=no'
-  let opts .= " --language-force='" . lang_info.name . "' "
+  let opts .= " --language-force=\"" . lang_info.name . "\" "
   let opts .= lang_info.ctags_options
 
   let path = s:Util.Path.normalize(temp_file)
   let path = s:Util.String.shellescape(path)
 
-  let cmdline = s:Ctags.exe . opts . path
+  if filetype == "go"
+    let cmdline = "gotags -silent " . path
+  else
+    let cmdline = s:Ctags.exe . opts . path
+  endif
+
 
   " Execute the Ctags.
   let ctags_out = unite#util#system(cmdline)
+  echomsg cmdline
   let status = unite#util#get_last_status()
   if status != 0
     call unite#print_message(
@@ -149,9 +159,16 @@ function! s:execute_ctags(context)
   endif
 
   let tag_lines = split(ctags_out, "\<NL>")
+  " echoms "len:" . len(tag_lines)
+  " echomsg ctags_out
   try
+      " echomsg tag_lines
     " Convert tag lines into tag objects.
-    let tags = map(tag_lines, 's:create_tag(v:val, lang_info)')
+    if filetype == "go"
+        let tags = map(tag_lines, 's:create_tag_go(v:val, lang_info)')
+    else
+        let tags = map(tag_lines, 's:create_tag(v:val, lang_info)')
+    endif
     call filter(tags, '!empty(v:val)')
     return tags
   catch
@@ -172,7 +189,7 @@ endfunction
 "   extension_fields
 "     := key:value<Tab>key:value<Tab>...
 "
-function! s:create_tag(tag_line, lang_info)
+function! s:create_tag(tag_line, lang_info) abort
   let fields = split(a:tag_line, "\<Tab>")
   if len(fields) < 3
     " The line doesn't seem a tag line, so ignore it.
@@ -200,10 +217,60 @@ function! s:create_tag(tag_line, lang_info)
   return tag
 endfunction
 
+function! s:create_tag_go(tag_line, lang_info) abort
+  let fields = split(a:tag_line, "\<Tab>")
+  if len(fields) < 5
+    " The line doesn't seem a tag line, so ignore it.
+    " Example: ctags: Warning: {message}
+    return {}
+  endif
+  let kind_map = {
+              \   'p' : 'package',
+              \   'i' : 'imports:1',
+              \   'c' : 'constants',
+              \   'v' : 'variables',
+              \   't' : 'types',
+              \   'n' : 'interfaces',
+              \   'w' : 'fields',
+              \   'e' : 'embedded',
+              \   'm' : 'methods',
+              \   'r' : 'constructor',
+              \   'f' : 'functions'
+              \}
+
+  let tag = {}
+  let tag.name = fields[0]
+  let tag.lnum = str2nr(fields[2])
+  let tag.kind = fields[3]
+  if tag.kind == "p"
+      return {}
+  endif
+  if has_key(kind_map, tag.kind)
+      let tag.kind = kind_map[tag.kind]
+  endif
+
+  for ext_fld in fields[4:-1]
+    let [key, value] = matchlist(ext_fld, '^\([^:]\+\):\(.*\)$')[1:2]
+    let tag[key] = value
+  endfor
+  for scope_kind in a:lang_info.scope_kinds
+    if has_key(tag, scope_kind)
+      let tag.scope_kind = scope_kind
+      let tag.scope = tag[scope_kind]
+    endif
+  endfor
+  if has_key(tag, 'scope')
+    let tag.qualified_name = tag.scope . a:lang_info.scope_delim . tag.name
+  else
+    let tag.qualified_name = tag.name
+  endif
+  return tag
+endfunction
+
 " Extract headings from the context buffer's file using the Ctags and then
 " returns a tree of the headings.
 "
-function! s:Ctags_extract_headings(context)
+function! s:Ctags_extract_headings(context) abort
   let filetype = a:context.buffer.filetype
   if !s:Ctags_exists()
     call unite#print_message("[unite-outline] Sorry, Exuberant Ctags required.")
@@ -287,7 +354,7 @@ call s:Ctags.function('extract_headings')
 
 " Creates a heading from {tag}.
 "
-function! s:create_heading(tag, context)
+function! s:create_heading(tag, context) abort
   let line = a:context.lines[a:tag.lnum]
   let heading = {
         \ 'word' : a:tag.name,
@@ -309,7 +376,7 @@ endfunction
 " Pseudo headings are the headings whose tags don't exists actually because
 " maybe they belong to the other files.
 "
-function! s:create_pseudo_heading(tag)
+function! s:create_pseudo_heading(tag) abort
   let heading = {
         \ 'word' : '(' . a:tag.scope . ') : ' . a:tag.scope_kind,
         \ 'type' : a:tag.scope_kind,
@@ -321,7 +388,7 @@ endfunction
 
 " Gets a full parameter list from the context buffer's line.
 "
-function! s:get_param_list(context, lnum)
+function! s:get_param_list(context, lnum) abort
   let line = s:Util.join_to_rparen(a:context, a:lnum)
   return matchstr(line, '([^)]*)')
 endfunction
@@ -333,7 +400,7 @@ let s:OOP_ACCESS_MARKS = {
       \ 'protected': '#',
       \ 'private'  : '-'
       \ }
-function! s:get_tag_access_mark(tag)
+function! s:get_tag_access_mark(tag) abort
   let access = has_key(a:tag, 'access') ? a:tag.access : 'unknown'
   return get(s:OOP_ACCESS_MARKS, access, '_') . ' '
 endfunction
@@ -341,7 +408,7 @@ endfunction
 " Count up {tag}'s name and returns an ID suffix (#2, #3, ...) for {tag}.
 " If the {tag} is the first one that has the name, returns empty String.
 "
-function! s:get_tag_id(tag)
+function! s:get_tag_id(tag) abort
   let name = a:tag.qualified_name
   if has_key(a:tag, 'signature')
     let name .= a:tag.signature
@@ -361,13 +428,13 @@ endfunction
 "
 "  [c] classes
 "  [d] macro definitions
-"   e  enumerators (values inside an enumeration)
+"  [e] enumerators (values inside an enumeration)
 "  [f] function definitions
 "  [g] enumeration names
 "   l  local variables
-"   m  class, struct, and union members
+"  [m] class, struct, and union members
 "  [n] namespaces
-"   p  function prototypes
+"  [p] function prototypes, pure virtual functions
 "  [s] structure names
 "  [t] typedefs
 "  [u] union names
@@ -377,10 +444,10 @@ endfunction
 let s:Ctags.lang_info.cpp = {
       \ 'name': 'C++',
       \ 'ctags_options': ' --c++-kinds=cdfgnstuempv ',
-      \ 'scope_kinds'  : ['namespace', 'class', 'struct'],
+      \ 'scope_kinds'  : ['namespace', 'class', 'struct', 'enum'],
       \ 'scope_delim'  : '::',
       \ }
-function! s:Ctags.lang_info.cpp.create_heading(tag, context)
+function! s:Ctags.lang_info.cpp.create_heading(tag, context) abort
   let line = a:context.lines[a:tag.lnum]
   let heading = {
         \ 'word' : a:tag.name,
@@ -423,7 +490,7 @@ function! s:Ctags.lang_info.cpp.create_heading(tag, context)
   return ignore ? {} : heading
 endfunction
 
-function! s:get_expanded(context, lnum, macro)
+function! s:get_expanded(context, lnum, macro) abort
   let line = a:context.lines[a:lnum]
   let expanded = matchstr(line, a:macro . '\%(([^)]*)\)\=\s\+\zs.*')
   let lnum = a:lnum + 1
@@ -473,6 +540,13 @@ let s:Ctags.lang_info.java = {
       \ 'scope_kinds'  : ['interface', 'class', 'enum'],
       \ 'scope_delim'  : '.',
       \ }
+
+let s:Ctags.lang_info.go = {
+      \ 'name': 'Go',
+      \ 'ctags_options': ' -sort -silent ',
+      \ 'scope_kinds'  : ['package', 'imports', 'functions'],
+      \ }
+
 
 let &cpo = s:save_cpo
 unlet s:save_cpo

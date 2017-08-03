@@ -15,7 +15,7 @@
 
 " TODO: Use jsctags for much better heading list!
 
-function! unite#sources#outline#defaults#javascript#outline_info()
+function! unite#sources#outline#defaults#javascript#outline_info() abort
   return s:outline_info
 endfunction
 
@@ -26,22 +26,32 @@ let s:Util = unite#sources#outline#import('Util')
 
 let s:pat_indent  = '\<\h\w*\>'
 
-let s:pat_assign = '\%(var\s\+\)\=\(' . s:pat_indent . '\%(\.' . s:pat_indent . '\)*\)\s*='
+let s:pat_assign = '\%(\%(var\|let\|const\)\s\+\)\=\(' . s:pat_indent . '\%(\.' . s:pat_indent . '\)*\)\s*='
 " NOTE: This sub pattern contains 1 capture;  1:lvalue
 
 let s:pat_label  = '\(' . s:pat_indent . '\)\s*:'
 " NOTE: This sub pattern contains 1 capture;  1:label
 
-let s:pat_rvalue = '\(function\s*(\([^)]*\))\|{\)'
+let s:pat_rvalue = '\(function\s*(\([^)]*\))\|(\(.*\))\s*{\|\s*{\|\(\w\+\)\s*(\(.*\))\s*{\)'
 " NOTE: This sub pattern contains 2 captures; 1:rvalue [, 2:arg_list]
+
+let s:pat_def =  '\%(\%(export\s\+\%(default\s\+\)\=\)\=function\>\)'
+
+let s:pat_es6_class = '^\s*\%(export\s\+\%(default\s\+\)\=\)\=class\s\+\(\S\+\)\s*{$'
+" NOTE: This sub pattern contains 1 capture;  1:className
+
+let s:pat_es6_method = '^\s*\(\%(static\s\+\)\?\w\+\)\s*(\([^)]*\))\s*{$'
+" NOTE: This sub pattern contains 2 capture;  1:methodName [, 2:arg_list]
 
 "-----------------------------------------------------------------------------
 " Outline Info
 
 let s:outline_info = {
       \ 'heading-1': s:Util.shared_pattern('cpp', 'heading-1'),
-      \ 'heading'  : '^\s*\%(function\>\|' .
-      \   '\%(' . s:pat_assign . '\|' . s:pat_label . '\)\s*' . s:pat_rvalue . '\)',
+      \ 'heading'  : '^\s*\%(' . s:pat_def . '\|' .
+      \   '\%(' .
+      \     '\%(export\s\+\%(default\s\+\)\=\)\=class\s\+\(\S\+\)\s\+\%(extends\s\+\w\+\)\?\|\s*\%(static\s\+\)\?\w\+\s*\|' . s:pat_assign . '\|' . s:pat_label .
+      \   '\)\s*' . s:pat_rvalue . '\)',
       \
       \ 'skip': {
       \   'header': s:Util.shared_pattern('cpp', 'header'),
@@ -52,7 +62,7 @@ let s:outline_info = {
       \ ],
       \}
 
-function! s:outline_info.create_heading(which, heading_line, matched_line, context)
+function! s:outline_info.create_heading(which, heading_line, matched_line, context) abort
   let h_lnum = a:context.heading_lnum
   " Level 1 to 3 are reserved for comment headings.
   let level = s:Util.get_indent_level(a:context, h_lnum) + 3
@@ -70,7 +80,7 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
   elseif a:which ==# 'heading'
 
     let matched_list = matchlist(a:heading_line,
-          \ '^\s*function\s\+\(' . s:pat_indent . '\)\s*(\(.*\))')
+          \ '^\s*' . s:pat_def . '\s\+\(' . s:pat_indent . '\)\s*(\(.*\))')
     if len(matched_list) > 0
       " function Foo(...) -> Foo(...)
       " function foo(...) -> foo(...)
@@ -94,7 +104,7 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
               let heading.word = lvalue . '(' . arg_list . ')'
             else
               " Foo.bar = function(...) -> bar(...)
-              let heading.level += 1
+              "let heading.level += 1
               let heading.word = prop_name . '(' . arg_list . ')'
             endif
           else
@@ -128,6 +138,23 @@ function! s:outline_info.create_heading(which, heading_line, matched_line, conte
         else
           " foo: {
           let heading.level = 0
+        endif
+      endif
+    else
+      let matched_list = matchlist(a:heading_line, s:pat_es6_class)
+      if len(matched_list) > 0
+        let heading.level = 1
+        let heading.word = 'class ' . matched_list[1]
+      else
+        let heading.level = 2
+        let matched_list = matchlist(a:heading_line, s:pat_es6_method)
+        if len(matched_list) > 0
+          if match(a:heading_line, '^\s*\%(for\|if\|while\|switch\)\>') != -1
+            let heading.level = 0
+          else
+            let [func_name, arg_list] = matched_list[1:2]
+            let heading.word = func_name . '(' . arg_list . ')'
+          endif
         endif
       endif
     endif
