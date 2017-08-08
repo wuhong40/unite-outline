@@ -275,7 +275,7 @@ function! s:Ctags_extract_headings(context) abort
   if !s:Ctags_exists()
     call unite#print_message("[unite-outline] Sorry, Exuberant Ctags required.")
     return []
-  elseif !s:Ctags_supports(filetype)
+  elseif filetype != "go" && !s:Ctags_supports(filetype)
     call unite#print_message("[unite-outline] " .
           \ "Sorry, your ctags doesn't support " . toupper(filetype))
     return []
